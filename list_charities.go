@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/csv"
-	"fmt"
 	"log"
 	"os"
 	"regexp"
@@ -16,13 +15,11 @@ type charity struct {
 	City string
 }
 
-func postScrape(category string, url string) error {
-
-	charities := []charity{}
+func postScrape(category string, url string, charities []charity) []charity {
 
 	doc, err := goquery.NewDocument(url)
 	if err != nil {
-		log.Fatal(err)
+		log.Panic(err)
 	}
 
 	doc.Find(".DNNModuleContent .Normal h4").Each(func(index int, item *goquery.Selection) {
@@ -42,18 +39,18 @@ func postScrape(category string, url string) error {
 			)
 			city := r.Replace(region[len(region)-1][0])
 			name := strings.Replace(title, region[len(region)-1][0], "", 1)
+
 			charities = append(charities, charity{Name: name, City: city})
 		}
 	})
-	writeRecords(charities, category)
 
-	return nil
+	return charities
 }
 
-func writeRecords(charities []charity, category string) error {
+func writeRecords(charities []charity) error {
 	headers := []string{"Charity", "City"}
 
-	file, err := os.Create(fmt.Sprintf("%s_charities.csv", category))
+	file, err := os.Create("charities.csv")
 	if err != nil {
 		return err
 	}
@@ -70,12 +67,33 @@ func writeRecords(charities []charity, category string) error {
 	return nil
 }
 
+func filterCharities(charities []charity) []charity {
+	u := make([]charity, 0, len(charities))
+	m := make(map[charity]bool)
+
+	for _, val := range charities {
+		if _, ok := m[val]; !ok {
+			m[val] = true
+			u = append(u, val)
+		}
+	}
+	return u
+}
+
 func main() {
+
+	charities := []charity{}
+
 	categories := map[string]string{
 		"addictions":            "https://charityvillage.com/cms/organizations/addictions-and-substance-abuse",
 		"children-youth-family": "https://charityvillage.com/cms/organizations/children-youth-and-family",
 	}
 	for cat, url := range categories {
-		postScrape(cat, url)
+		charities = postScrape(cat, url, charities)
 	}
+
+	charities = filterCharities(charities)
+
+	writeRecords(charities)
+
 }
