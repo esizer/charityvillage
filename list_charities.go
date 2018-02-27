@@ -29,6 +29,7 @@ func postScrape(category string, url string, charities []charity) []charity {
 			region := re.FindAllStringSubmatch(title, -1)
 			r := strings.NewReplacer(
 				"(", "",
+				"International:", "",
 				"National:", "",
 				"Regional:", "",
 				"Local:", "",
@@ -37,10 +38,12 @@ func postScrape(category string, url string, charities []charity) []charity {
 				",", "",
 				")", "",
 			)
-			city := r.Replace(region[len(region)-1][0])
-			name := strings.Replace(title, region[len(region)-1][0], "", 1)
+			if len(region) > 0 {
+				city := r.Replace(region[len(region)-1][0])
+				name := strings.Replace(title, region[len(region)-1][0], "", 1)
+				charities = append(charities, charity{Name: name, City: city})
+			}
 
-			charities = append(charities, charity{Name: name, City: city})
 		}
 	})
 
@@ -85,8 +88,21 @@ func main() {
 	charities := []charity{}
 
 	categories := map[string]string{
-		"addictions":            "https://charityvillage.com/cms/organizations/addictions-and-substance-abuse",
-		"children-youth-family": "https://charityvillage.com/cms/organizations/children-youth-and-family",
+		"addictions":                "https://charityvillage.com/cms/organizations/addictions-and-substance-abuse",
+		"children-youth-family":     "https://charityvillage.com/cms/organizations/children-youth-and-family",
+		"community-social-services": "https://charityvillage.com/cms/organizations/community-and-social-services",
+		"criminal-justice":          "https://charityvillage.com/cms/organizations/criminal-justice",
+		"culture-heritage":          "https://charityvillage.com/cms/organizations/culture-and-heritage",
+		"disabilities":              "https://charityvillage.com/cms/organizations/disabilities",
+		"lgbtq":                     "https://charityvillage.com/cms/organizations/lesbian-gay-bisexual-transgender-lgbt",
+		"health-diseases":           "https://charityvillage.com/cms/organizations/health-and-diseases",
+		"human-rights":              "https://charityvillage.com/cms/organizations/human-rights-and-civil-liberties",
+		"itl-relief":                "https://charityvillage.com/cms/organizations/international-relief-development-peace",
+		"poverty":                   "https://charityvillage.com/cms/organizations/poverty-social-justice",
+		"public":                    "https://charityvillage.com/cms/organizations/public-society-benefit",
+		"senior-citizens":           "https://charityvillage.com/cms/organizations/senior-citizens",
+		"sports-recreation":         "https://charityvillage.com/cms/organizations/sports-and-recreation",
+		"women":                     "https://charityvillage.com/cms/organizations/women",
 	}
 	for cat, url := range categories {
 		charities = postScrape(cat, url, charities)
